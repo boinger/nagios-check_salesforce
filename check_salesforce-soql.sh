@@ -34,6 +34,7 @@ AUTHOR="Jeff Vier <jeff@jeffvier.com> / https://github.com/boinger"
 DEBUG=0
 user='user.name@org.xxx'  ## set this if you only have one Org.
 countstring=totalSize
+grepargs=""
 perfdata=false
 
 ## Initial vars
@@ -54,9 +55,12 @@ Usage="Basic Usage:\n
          If your SOQL (--query) doesn't include a LIMIT (preferably 'LIMIT 1'), you must specify this flag.  Note: there can be significant performance issues and unexpected behavior with a limitless query, so be sure you know what you're doing.
 
       -s <string>|--string=<string>
-         String comparison. Must be exact.
-      -S <string>|--substring=<string>
-         Substring comparison. Evaluates if the result *contains* this string.
+         Substring comparison. OK if the result *contains* this string, Critical if not.
+      -i
+         Case-insensitive string comparison
+      --grepargs=\"<grep args>\"
+         Any other grep arguments you want to pass in.
+
       -w <warning threshold>|--warning=<warning threshold>
          Integer to compare against COUNT() query.
       -c <critical threshold>|--critical=<critical threshold>
@@ -76,7 +80,7 @@ Usage="Basic Usage:\n
       -V|--version)
           Just version info
 
-      ** Note, ONE of -c|--critical, -s|--string, -S|--substring is required.
+      ** Note, ONE of -c|--critical, -s|--string is required.
 "
 print_version() {
   echo -e "$PROGNAME v$VERSION"
@@ -89,7 +93,7 @@ print_help() {
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -a -o C:c:hQ:s:S:u:vVw: -l countstring:,critical:,debug,help,lt,nolimit,query:,string:,substring:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
+if ! options=$(getopt -a -o C:c:hiQ:s:u:vVw: -l countstring:,critical:,debug,help,grepargs:lt,nolimit,query:,string:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
 
 eval set -- $options
 
@@ -104,7 +108,8 @@ while [ $# -gt 0 ]; do
       -Q|--query)      query=$2 ; shift;;
       --nolimit)       nolimit=1 ;; ## no shift for argumentless-options
       -s|--string)     string=$2 && let req_ct=$req_ct+1 ; shift;;
-      -S|--substring)  substring=$2 && let req_ct=$req_ct+1 ; shift;;
+      -i)              grepargs="$grepargs -i" ;;
+      --grepargs)      grepargs="$grepargs $2" ; shift;;
       -w|--warning)    warn=$2 ; shift;;
       -c|--critical)   crit=$2 && let req_ct=$req_ct+1 ; shift;;
       --lt)            LESS=1 ;;
@@ -136,9 +141,8 @@ fi
 
 [ -z $warn ] && warn=$crit && [ $DEBUG -ge 4 ] && echo "[DEBUG4] --warn missing.  set to --crit (${crit}) for simplicity."
 
-countval() { ## usage: jsonval <json> <key>
-  var=`echo $output | sed -e 's/\\\\\//\//g' -e 's/[{}]//g' | awk '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed -e 's/\"\:\"/\|/g' -e 's/[\,]/ /g' -e 's/\"//g' | grep -o "$1:\s[0-9]*"`
-  echo ${var#*:}
+countval() { ## usage: countval <key>
+  echo $output | jq ".result.${1}"
 }
 
 get_status() {
@@ -163,6 +167,18 @@ set_state() { ## pass in numeric statelevel
 do_output() {
   echo -e "Everything seems fine?"
 }
+
+searchresult() { ## usage searchresult <string>
+  stringcheck=$(echo $output | jq '.result.records | del(.[].attributes)[] ' | grep -m1 $grepargs $1 | xargs)
+  if [ -n "$stringcheck" ]; then
+    set_state 0
+    EXITMESSAGE="'$1' found in '$stringcheck'"
+  else
+    set_state 2
+    EXITMESSAGE="String '$1' not found"
+  fi
+}
+
 
 eval_gt() {
   WTH=$1 ## Warning threshold
@@ -220,6 +236,8 @@ else
     else
       eval_gt $warn $crit $(countval ${countstring})
     fi
+  elif [ -n "$string" ]; then
+    searchresult $string
   else
     echo "something else"
   fi
