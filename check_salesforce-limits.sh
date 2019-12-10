@@ -80,12 +80,12 @@ print_help() {
   exit 3
 }
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -au -o c:hl:t:u:vVw: -l critical:,debug,help,limit:,tempfile:,tempfilemaxage:,user:,version,warning: -- "$@"); then exit 1; fi
+if ! options=$(getopt -a -o c:hl:t:u:vVw: -l critical:,debug,help,limit:,tempfile:,tempfilemaxage:,user:,version,warning: -- "$@"); then exit 1; fi
 
-set -- $options
+eval set -- $options
 
 while [ $# -gt 0 ]; do
-    case $1 in
+    case "$1" in
       --debug)         DEBUG=5 ;;
       -h|--help)       print_help; exit 3 ;;
       -V|--version)    print_version $PROGNAME $VERSION; exit 3 ;;
