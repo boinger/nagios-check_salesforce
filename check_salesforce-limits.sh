@@ -30,13 +30,17 @@ PROGNAME=`basename $0`
 VERSION="0.1"
 AUTHOR="Jeff Vier <jeff@jeffvier.com> / https://github.com/boinger"
 
-DEBUG=0
-user='user.name@org.xxx'  ## set this if you only have one Org.
-tempfilemaxage=30 ## in minutes
-perfdata=false
+## PATHS
+SUDO="/usr/bin/sudo"
+SFDX="/usr/local/bin/sfdx"
+DATE="/bin/date"
 
 ## Initial vars
-STATELEVEL=3  ## Initial statelevel
+DEBUG=0
+STATELEVEL=3  ## Initial statelevel.  3 is UNKNOWN.
+user='user.name@org.xxx'  ## set this if you only have one Org.
+tempfilemaxage=30 ## in minutes
+## perfdata=false ## Not implemented yet
 
 Desc="$PROGNAME is a Nagios plugin to retrieve and evaluate Org data from Salesforce."
 
@@ -44,30 +48,30 @@ Usage="Basic Usage:\n
     $PROGNAME -u $user -t
 
     Options:
-      -l <target limit>|--limit=<target limit>
+      -l <target limit> | --limit=<target limit>
          What limit are we checking on? Example: DataStorageMB
          Hint: run \`sudo sfdx force:limits:api:display -u <username>\` to see the full list.
-      -u <username> |--user=<username>)
+      -u <username> | --user=<username>)
          Defines the username to use to connect, which in turn defines what Org is queried. Default: $user
 
-      -w <warning threshold>|--warning=<warning threshold>
+      -w <warning threshold> | --warning=<warning threshold>
          May be expressed in hard numbers or percentage.  Percentage is strongly recommended. Optional.
-      -c <critical threshold>|--critical=<critical threshold>
+      -c <critical threshold> | --critical=<critical threshold>
          May be expressed in hard numbers or percentage.  Percentage is strongly recommended. Technically optional.
 
-      -t <filename>|--tempfile=<filename>)
+      -t <filename> | --tempfile=<filename>
          Store results in (and references results from) a temp file.  Saves on API calls if you're watching a bunch of different limits. Optional. Recommended: /dev/shm/$PROGNAME.tempfile
-      --tempfilemaxage=<minutes>)
+      --tempfilemaxage=<minutes>
          Max age of the tempfile, if used, in minutes.  Default: $tempfilemaxage
 
-      -v)
+      -v
           Verbose.  Add more (-vvv or -v -v -v) for even more verbosity.
-      --debug)
+      --debug
           Max verbosity (same as -vvvvv)
 
-      -h|--help)
+      -h|--help
           You're looking at it.
-      -V|--version)
+      -V|--version
           Just version info
 "
 print_version() {
@@ -125,20 +129,20 @@ fi
 get_status() {
   if [[ -n "$tempfile" ]]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$tempfile is set to ${tempfile}"
-    tempfileage=$(date +%s -r $tempfile)
+    tempfileage=$(${DATE} +%s -r $tempfile)
     [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile age is ${tempfileage}"
-    [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile maxage in epoch format is $(date +%s --date="$tempfilemaxage min ago"), a delta of $((${tempfileage} - $(date +%s --date="$tempfilemaxage min ago"))) vs max of $((60*${tempfilemaxage}))"
+    [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile maxage in epoch format is $(${DATE} +%s --date="$tempfilemaxage min ago"), a delta of $((${tempfileage} - $(${DATE} +%s --date="$tempfilemaxage min ago"))) vs max of $((60*${tempfilemaxage}))"
   fi
 
-  if [[ -r $tempfile && $tempfileage -ge $(date +%s --date="$tempfilemaxage min ago") ]]; then
+  if [[ -r $tempfile && $tempfileage -ge $(${DATE} +%s --date="$tempfilemaxage min ago") ]]; then
     [ $DEBUG -ge 3 ] && echo "[DEBUG3] Tempfile exists and is younger than $tempfilemaxage minutes.  Using that."
     output=$(cat $tempfile)
   else
-    cmd="sudo sfdx force:limits:api:display -u $user"
+    cmd="${SUDO} ${SFDX} force:limits:api:display -u $user"
     [ $DEBUG -ge 3 ] && echo "[DEBUG3] Executing: ${cmd}"
     output=$($cmd)
     if [ -n "$tempfile" ]; then
-      if [[ ! -w $tempfile || $tempfileage -lt $(date +%s --date="$tempfilemaxage min ago") ]]; then
+      if [[ ! -w $tempfile || $tempfileage -lt $(${DATE} +%s --date="$tempfilemaxage min ago") ]]; then
         [ $DEBUG -ge 1 ] && echo "[DEBUG1] Writing output to ${tempfile}"
         echo "${output}" >> $tempfile
       fi
@@ -163,10 +167,6 @@ set_state() { ## pass in numeric statelevel
       0) STATE="OK" ;;
     esac
   fi
-}
-
-do_output() {
-  echo -e "Everything seems fine?"
 }
 
 eval_lt() {
@@ -231,10 +231,9 @@ else
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] Value being evaluated is $value"
     #eval_lt "Descriptive name" $warn $crit $value
     eval_lt "${limarr[0]}" $warnval $critval $value
-    ##[ $DEBUG -ge 1 ] && echo -n "[DEBUG3] " && do_output
   fi
 fi
 
 echo -n "$STATE - $EXITMESSAGE"
-[ $perfdata == true ] && echo " | 'a'=$a 'b'=$b 'zz'=$zzz" || echo
+## [ $perfdata == true ] && echo " | 'a'=$a 'b'=$b 'zz'=$zzz" || echo
 exit $STATELEVEL
