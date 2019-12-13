@@ -146,7 +146,7 @@ countval() { ## usage: countval <key>
 }
 
 get_status() {
-  cmd="sudo sfdx force:data:soql:query -rjson -u $user -q \"${query}\""
+  cmd="sfdx force:data:soql:query -rjson -u $user -q \"${query}\""
   [ $DEBUG -ge 3 ] && echo "[DEBUG3] Executing: ${cmd}"
   output=`eval ${cmd}`
   [ $DEBUG -ge 5 ] && echo -e "[DEBUG5] output:\n${output}"

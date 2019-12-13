@@ -31,7 +31,6 @@ VERSION="0.1"
 AUTHOR="Jeff Vier <jeff@jeffvier.com> / https://github.com/boinger"
 
 ## PATHS
-SUDO="/usr/bin/sudo"
 SFDX="/usr/local/bin/sfdx"
 DATE="/bin/date"
 
@@ -138,7 +137,7 @@ get_status() {
     [ $DEBUG -ge 3 ] && echo "[DEBUG3] Tempfile exists and is younger than $tempfilemaxage minutes.  Using that."
     output=$(cat $tempfile)
   else
-    cmd="${SUDO} ${SFDX} force:limits:api:display -u $user"
+    cmd="${SFDX} force:limits:api:display -u $user"
     [ $DEBUG -ge 3 ] && echo "[DEBUG3] Executing: ${cmd}"
     output=$($cmd)
     if [ -n "$tempfile" ]; then
