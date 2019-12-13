@@ -45,7 +45,7 @@ tempfilemaxage=30 ## in minutes
 Desc="$PROGNAME is a Nagios plugin to retrieve and evaluate Org data from Salesforce."
 
 Usage="Basic Usage:\n
-    $PROGNAME -u $user -t
+    $PROGNAME -u $user -l LimitName [-w n%] [-c n%] [-t /path/to/tempfile] [--tempfilemaxage NN] [-vvvv] [--debug]
 
     Options:
       -l <target limit> | --limit=<target limit>
