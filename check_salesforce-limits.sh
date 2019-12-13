@@ -33,6 +33,7 @@ AUTHOR="Jeff Vier <jeff@jeffvier.com> / https://github.com/boinger"
 ## PATHS
 SFDX="/usr/local/bin/sfdx"
 DATE="/bin/date"
+GREP="/bin/grep"
 
 ## Initial vars
 DEBUG=0
@@ -153,7 +154,7 @@ get_status() {
 get_val() {
   [ $DEBUG -ge 2 ] && echo -e "[DEBUG2] pulling $1 from \$output"
   IFS=' '
-  read -a limarr <<< $(grep $1 <<< $output)
+  read -a limarr <<< $(${GREP} "^${1}" <<< $output)
 }
 
 set_state() { ## pass in numeric statelevel
