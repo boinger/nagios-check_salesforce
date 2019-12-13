@@ -144,7 +144,7 @@ get_status() {
     if [ -n "$tempfile" ]; then
       if [[ ! -w $tempfile || $tempfileage -lt $(${DATE} +%s --date="$tempfilemaxage min ago") ]]; then
         [ $DEBUG -ge 1 ] && echo "[DEBUG1] Writing output to ${tempfile}"
-        echo "${output}" >> $tempfile
+        echo "${output}" > $tempfile
       fi
     fi
   fi
