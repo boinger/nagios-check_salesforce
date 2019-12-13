@@ -129,9 +129,10 @@ fi
 get_status() {
   if [[ -n "$tempfile" ]]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$tempfile is set to ${tempfile}"
-    tempfileage=$(${DATE} +%s -r $tempfile)
-    [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile age is ${tempfileage}"
-    [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile maxage in epoch format is $(${DATE} +%s --date="$tempfilemaxage min ago"), a delta of $((${tempfileage} - $(${DATE} +%s --date="$tempfilemaxage min ago"))) vs max of $((60*${tempfilemaxage}))"
+    [ -r $tempfile ] && tempfileage=$(${DATE} +%s -r $tempfile) 
+    [ ! -r $tempfile ] && [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$tempfile does not [currently] exist"
+    [ -r $tempfile ] && [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile age is ${tempfileage}"
+    [ -r $tempfile ] && [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile maxage in epoch format is $(${DATE} +%s --date="$tempfilemaxage min ago"), a delta of $((${tempfileage} - $(${DATE} +%s --date="$tempfilemaxage min ago"))) vs max of $((60*${tempfilemaxage}))"
   fi
 
   if [[ -r $tempfile && $tempfileage -ge $(${DATE} +%s --date="$tempfilemaxage min ago") ]]; then
