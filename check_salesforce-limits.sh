@@ -189,14 +189,15 @@ eval_lt() {
   if [ $VAL -le $CTH ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] $VAL < $CTH! Critical!"
     set_state 2
-    EXITMESSAGE="$WHAT is CRITICAL ($exitval with crit of $crit)"
+    EXITMESSAGE="$WHAT is CRITICAL ($exitval with crit of $crit"
   elif [ $VAL -le $WTH ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] $VAL < $WTH! Warning!"
     set_state 1
-    EXITMESSAGE="$WHAT is WARNING ($exitval with warn of $warn)"
+    EXITMESSAGE="$WHAT is WARNING ($exitval with warn of $warn"
   else
-    EXITMESSAGE="$WHAT is OK ($exitval with crit of $crit)"
+    EXITMESSAGE="$WHAT is OK ($exitval with crit of $crit"
   fi
+  EXITMESSAGE="$EXITMESSAGE [$rawval out of $rawmax])"
 }
 
 # Here we go!
@@ -217,6 +218,9 @@ else
     exit 0
   else
     set_state 0 ##assume we're ok
+    rawval=${limarr[1]}
+    rawmax=${limarr[2]}
+    [ $DEBUG -ge 3 ] && echo "[DEBUG3] rawval is ${rawval}, rawmax is ${rawmax}"
     if [ "${crit:(-1)}" == "%" ]; then
       [ $DEBUG -ge 4 ] && echo "[DEBUG4] --crit is set to $crit, so we're using percentage logic"
       value=$(echo "scale=2; ${limarr[1]}/${limarr[2]}*100" | bc)
