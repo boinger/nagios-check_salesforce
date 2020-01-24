@@ -67,6 +67,8 @@ Usage="Basic Usage:\n
          Integer to compare against COUNT() query.
       -C <string>|--countstring=<string>
          JSON field to use for number comparison.  Default is $countstring.
+      -R <string>|--returnfield=<string>
+         Field to return when counting (normally just the count is returned). Uses jq syntax. Example: '.result.records[-1].Id' for the last returned Id.
       --lt
          Designates that thresholds are evaluated for less-than. Default is greater-than.
 
@@ -93,7 +95,7 @@ print_help() {
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -a -o C:c:hiQ:s:u:vVw: -l countstring:,critical:,debug,help,grepargs:,lt,nolimit,query:,string:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
+if ! options=$(getopt -a -o C:c:hiQ:R:s:u:vVw: -l countstring:,critical:,debug,help,grepargs:,lt,nolimit,query:,returnfield:,string:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
 
 eval set -- $options
 
@@ -114,6 +116,7 @@ while [ $# -gt 0 ]; do
       -c|--critical)   crit=$2 && let req_ct=$req_ct+1 ; shift;;
       --lt)            LESS=1 ;;
       -C|--countstring)countstring=$2 ; shift;;
+      -R|--returnfield)returnfield=$2 ; shift;;
       (--) shift; break;;
       (-*) echo "$0: error - unrecognized option $1" 1>&2; exit 99;;
       (*) break;;
@@ -187,16 +190,16 @@ eval_gt() {
   [ $DEBUG -ge 5 ] && echo "[DEBUG5] WTH: $WTH CTH: $CTH VAL: $VAL"
   if [ $VAL -ge $CTH ]; then
     set_state 2
-    EXITMESSAGE="$VAL over max of $CTH"
+    EXITMESSAGE="$VAL returnd (crit is max of $CTH)"
   elif [ $VAL -ge $WTH ]; then
     if [ $WTH -ge $CTH ]; then
       echo "ERROR - you can't have a Warning threshold greater than a Critical threshold.  Fix it or specify --less."
       exit 97
     fi
     set_state 1
-    EXITMESSAGE="$VAL over max of $WTH"
+    EXITMESSAGE="$VAL returned (crit is max of $WTH)"
   else
-    EXITMESSAGE="$VAL (with crit of >$crit)"
+    EXITMESSAGE="$VAL returned (with crit of >$crit)"
   fi
 }
 
@@ -212,13 +215,13 @@ eval_lt() {
   if [ $VAL -lt $CTH ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] $VAL < $CTH! Critical!"
     set_state 2
-    EXITMESSAGE="$VAL under crit of $crit"
+    EXITMESSAGE="$VAL returned (crit is min of $crit)"
   elif [ $VAL -lt $WTH ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] $VAL < $WTH! Warning!"
     set_state 1
-    EXITMESSAGE="$VAL under warn of $warn"
+    EXITMESSAGE="$VAL returned (warn is min of $warn"
   else
-    EXITMESSAGE="$VAL (with crit of <$crit)"
+    EXITMESSAGE="$VAL returned (with crit of <$crit)"
   fi
 }
 
@@ -240,6 +243,12 @@ else
     searchresult $string
   else
     echo "something else"
+  fi
+  if [ -n "$returnfield" ]; then
+    [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$returnfield is set to $returnfield, so trying to extract that from the output"
+    RETURNSTRING=$(echo $output | jq "$returnfield")
+    [ $DEBUG -ge 5 ] && echo "[DEBUG5] \$returnfield found $RETURNSTRING"
+    [ -n "$RETURNSTRING" ] && [ "$RETURNSTRING" != "null" ] && EXITMESSAGE="${EXITMESSAGE} / ${RETURNSTRING}"
   fi
 fi
 
