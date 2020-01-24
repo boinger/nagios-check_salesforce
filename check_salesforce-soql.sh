@@ -93,7 +93,7 @@ print_help() {
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -a -o C:c:hiQ:s:u:vVw: -l countstring:,critical:,debug,help,grepargs:lt,nolimit,query:,string:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
+if ! options=$(getopt -a -o C:c:hiQ:s:u:vVw: -l countstring:,critical:,debug,help,grepargs:,lt,nolimit,query:,string:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
 
 eval set -- $options
 
