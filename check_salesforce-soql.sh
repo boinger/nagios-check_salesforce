@@ -209,11 +209,11 @@ eval_lt() {
     echo "ERROR - you can't have a Warning threshold less than a Critical threshold when we're comparing for minimums.  Fix it or don't specify --less."
     exit 98
   fi
-  if [ $VAL -le $CTH ]; then
+  if [ $VAL -lt $CTH ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] $VAL < $CTH! Critical!"
     set_state 2
     EXITMESSAGE="$VAL under crit of $crit"
-  elif [ $VAL -le $WTH ]; then
+  elif [ $VAL -lt $WTH ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] $VAL < $WTH! Warning!"
     set_state 1
     EXITMESSAGE="$VAL under warn of $warn"
