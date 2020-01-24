@@ -33,7 +33,7 @@ AUTHOR="Jeff Vier <jeff@jeffvier.com> / https://github.com/boinger"
 
 DEBUG=0
 user='user.name@org.xxx'  ## set this if you only have one Org.
-countstring=totalSize
+countstring=result.totalSize
 grepargs=""
 perfdata=false
 
@@ -66,7 +66,7 @@ Usage="Basic Usage:\n
       -c <critical threshold>|--critical=<critical threshold>
          Integer to compare against COUNT() query.
       -C <string>|--countstring=<string>
-         String to use for number comparison.  Default is $countstring.
+         JSON field to use for number comparison.  Default is $countstring.
       --lt
          Designates that thresholds are evaluated for less-than. Default is greater-than.
 
