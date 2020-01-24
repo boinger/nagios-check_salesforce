@@ -33,7 +33,7 @@ AUTHOR="Jeff Vier <jeff@jeffvier.com> / https://github.com/boinger"
 
 DEBUG=0
 user='user.name@org.xxx'  ## set this if you only have one Org.
-countstring=result.totalSize
+countstring=.result.totalSize
 grepargs=""
 perfdata=false
 
@@ -66,7 +66,7 @@ Usage="Basic Usage:\n
       -c <critical threshold>|--critical=<critical threshold>
          Integer to compare against COUNT() query.
       -C <string>|--countstring=<string>
-         JSON field to use for number comparison.  Default is $countstring.
+         JSON field to use for number comparison.  Uses jq syntax. Default is $countstring.
       -R <string>|--returnfield=<string>
          Field to return when counting (normally just the count is returned). Uses jq syntax. Example: '.result.records[-1].Id' for the last returned Id.
       --lt
@@ -145,7 +145,7 @@ fi
 [ -z $warn ] && warn=$crit && [ $DEBUG -ge 4 ] && echo "[DEBUG4] --warn missing.  set to --crit (${crit}) for simplicity."
 
 countval() { ## usage: countval <key>
-  echo $output | jq ".${1}"
+  echo $output | jq "${1}"
 }
 
 get_status() {
