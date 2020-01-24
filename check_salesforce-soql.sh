@@ -142,7 +142,7 @@ fi
 [ -z $warn ] && warn=$crit && [ $DEBUG -ge 4 ] && echo "[DEBUG4] --warn missing.  set to --crit (${crit}) for simplicity."
 
 countval() { ## usage: countval <key>
-  echo $output | jq ".result.${1}"
+  echo $output | jq ".${1}"
 }
 
 get_status() {
