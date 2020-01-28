@@ -190,7 +190,7 @@ eval_gt() {
   [ $DEBUG -ge 5 ] && echo "[DEBUG5] WTH: $WTH CTH: $CTH VAL: $VAL"
   if [ $VAL -ge $CTH ]; then
     set_state 2
-    EXITMESSAGE="$VAL returnd (crit is max of $CTH)"
+    EXITMESSAGE="$VAL returned (crit is max of $CTH)"
   elif [ $VAL -ge $WTH ]; then
     if [ $WTH -ge $CTH ]; then
       echo "ERROR - you can't have a Warning threshold greater than a Critical threshold.  Fix it or specify --less."
