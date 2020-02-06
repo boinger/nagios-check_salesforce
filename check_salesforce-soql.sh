@@ -95,7 +95,7 @@ print_help() {
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -a -o C:c:hiQ:R:s:u:vVw: -l countstring:,critical:,debug,help,grepargs:,lt,nolimit,query:,returnfield:,string:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
+if ! options=$(getopt -a -o C:c:hiQ:R:s:t:u:vVw: -l countstring:,critical:,debug,help,grepargs:,lt,nolimit,query:,returnfield:,string:,trunc:,user:,version,warning: --name "$0" -- "$@"); then exit 1; fi
 
 eval set -- $options
 
@@ -117,6 +117,7 @@ while [ $# -gt 0 ]; do
       --lt)            LESS=1 ;;
       -C|--countstring)countstring=$2 ; shift;;
       -R|--returnfield)returnfield=$2 ; shift;;
+      -t|--trunc)      trunclength=$2 ; shift;;
       (--) shift; break;;
       (-*) echo "$0: error - unrecognized option $1" 1>&2; exit 99;;
       (*) break;;
@@ -247,6 +248,7 @@ else
   if [ -n "$returnfield" ]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$returnfield is set to $returnfield, so trying to extract that from the output"
     RETURNSTRING=$(echo $output | jq "$returnfield")
+    [ -n "${trunclength}" ] && [ "${#RETURNSTRING}" -gt "${trunclength}" ] && RETURNSTRING="$(echo $RETURNSTRING | cut -c 1-${trunclength})...(truncated)"
     [ $DEBUG -ge 5 ] && echo "[DEBUG5] \$returnfield found $RETURNSTRING"
     [ -n "$RETURNSTRING" ] && [ "$RETURNSTRING" != "null" ] && EXITMESSAGE="${EXITMESSAGE} / ${RETURNSTRING}"
   fi
