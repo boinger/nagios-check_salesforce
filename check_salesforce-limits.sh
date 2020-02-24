@@ -40,6 +40,7 @@ DEBUG=0
 STATELEVEL=3  ## Initial statelevel.  3 is UNKNOWN.
 user='user.name@org.xxx'  ## set this if you only have one Org.
 tempfilemaxage=30 ## in minutes
+tempfileminsize=10 ## in bytes (this is just a backstop to not use a junk cache file)
 ## perfdata=false ## Not implemented yet
 
 Desc="$PROGNAME is a Nagios plugin to retrieve and evaluate Org data from Salesforce."
@@ -129,14 +130,16 @@ fi
 get_status() {
   if [[ -n "$tempfile" ]]; then
     [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$tempfile is set to ${tempfile}"
-    [ -r $tempfile ] && tempfileage=$(${DATE} +%s -r $tempfile) 
-    [ ! -r $tempfile ] && [ $DEBUG -ge 2 ] && echo "[DEBUG2] \$tempfile does not [currently] exist"
+    [ ! -s $tempfile ] && [ $DEBUG -ge 1 ] && echo "[DEBUG1] \$tempfile does not [currently] exist or is zero bytes"
+    [ ! -r $tempfile ] && [ $DEBUG -ge 1 ] && echo "[DEBUG1] \$tempfile is not readable"
+    [ -r $tempfile ] && tempfileage=$(${DATE} +%s -r ${tempfile}) && tempfilesize=$(stat -c%s ${tempfile})
     [ -r $tempfile ] && [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile age is ${tempfileage}"
+    [ -r $tempfile ] && [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile size is ${tempfilesize}"
     [ -r $tempfile ] && [ $DEBUG -ge 4 ] && echo "[DEBUG4] \$tempfile maxage in epoch format is $(${DATE} +%s --date="$tempfilemaxage min ago"), a delta of $((${tempfileage} - $(${DATE} +%s --date="$tempfilemaxage min ago"))) vs max of $((60*${tempfilemaxage}))"
   fi
 
-  if [[ -r $tempfile && $tempfileage -ge $(${DATE} +%s --date="$tempfilemaxage min ago") ]]; then
-    [ $DEBUG -ge 3 ] && echo "[DEBUG3] Tempfile exists and is younger than $tempfilemaxage minutes.  Using that."
+  if [[ -r $tempfile && $tempfilesize -gt $tempfileminsize && $tempfileage -ge $(${DATE} +%s --date="$tempfilemaxage min ago") ]]; then
+    [ $DEBUG -ge 3 ] && echo "[DEBUG3] Tempfile exists, is >$tempfileminsize bytes, is readable, and is younger than $tempfilemaxage minutes.  Using that."
     output=$(cat $tempfile)
   else
     cmd="${SFDX} force:limits:api:display -u $user"
